@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import math
 import torch
-import numpy as np
 from torch.optim import Optimizer
 
 #########################################################################################################

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import math
 import torch
-import numpy as np
 from torch.optim import Optimizer
 
 #########################################################################################################
@@ -110,9 +109,7 @@ class TAdaBound(Optimizer):
                 bias_correction2 = 1 - beta2 ** state['step']
 
                 step_size = group['lr'] / denom
-                step_size = np.clip(step_size.cpu().numpy(), a_max = eta_up, a_min = eta_low)
-                #step_size.div_(math.sqrt(state['step']))
-                step_size = torch.tensor(step_size).to(grad.device)
+                step_size.clamp_(eta_low, eta_up)
                 step_size = step_size * math.sqrt(bias_correction2) / bias_correction1
 
                 p.data.add_(-step_size * exp_avg)

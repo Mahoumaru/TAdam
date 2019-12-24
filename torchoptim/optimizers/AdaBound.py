@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import math
 import torch
-import numpy as np
 from torch.optim import Optimizer
 
 #########################################################################################################
@@ -12,8 +11,8 @@ class AdaBound(Optimizer):
         https://openreview.net/pdf?id=Bkg3g2R9FX
     """
 
-    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,
-                 weight_decay=0, amsgrad=False):
+    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999),
+                 eps=1e-8, weight_decay=0, amsgrad=False):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -93,9 +92,7 @@ class AdaBound(Optimizer):
                 bias_correction2 = 1 - beta2 ** state['step']
 
                 step_size = group['lr'] / denom
-                step_size = np.clip(step_size.cpu().numpy(), a_max = eta_up, a_min = eta_low)
-                #step_size.div_(math.sqrt(state['step']))
-                step_size = torch.tensor(step_size).to(grad.device)
+                step_size.clamp_(eta_low, eta_up)
                 step_size = step_size * math.sqrt(bias_correction2) / bias_correction1
 
                 p.data.add_(-step_size * exp_avg)

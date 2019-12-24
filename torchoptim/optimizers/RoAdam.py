@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 import math
 import torch
-import numpy as np
 from torch.optim import Optimizer
 
 #########################################################################################################
 class RoAdam(Optimizer):
 
-    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999, 0.999), eps=1e-8,
-                 weight_decay=0, amsgrad=False, bounds=(0.1, 10.)):
+    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999, 0.999),
+                 eps=1e-8, weight_decay=0, amsgrad=False, bounds=(0.1, 10.)):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
