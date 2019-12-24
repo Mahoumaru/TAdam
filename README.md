@@ -1,5 +1,5 @@
-# t-Adam
-t-Adam: A Robust Stochastic Gradient Optimizer based on Adam
+# torchoptim
+Optimizers and regularizers for neural networks.
 
 Implemented using the pytorch library.
 
@@ -13,7 +13,7 @@ pip install -e .
 ```
 2. replace optimizer!
 ```python
-from torchoptim.TAdam import TAdam
+from torchoptim.optimizers.TAdam import TAdam
 optimizer = TAdam(net.parameters())
 ```
 3. adjust hyperparameters (same as Adam: lr, betas, eps, weight_decay, amsgrad)
