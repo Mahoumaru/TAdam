@@ -99,9 +99,6 @@ class TAdaBound(Optimizer):
                 # Decay the first and second moment running average coefficient
                 exp_avg.mul_(betaw).add_((1 - betaw), grad)
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
-                # Compute the upper and the lower bound:
-                eta_low = (1 - (1 / ((1 - beta2) ** (state['step'] + 1) + group['eps']))) * group['lr']
-                eta_up = (1 + (1 / ((1 - beta2) ** (state['step']) + group['eps']))) * group['lr']
                 # TAMSBound
                 if amsbound:
                     # Maintains the maximum of all 2nd moment running avg. till now
