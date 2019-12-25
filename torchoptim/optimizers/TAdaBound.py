@@ -81,7 +81,7 @@ class TAdaBound(Optimizer):
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 Wt, wt = state['W_t'], state['w_t']
-                if amsgrad:
+                if amsbound:
                     max_exp_avg_sq = state['max_exp_avg_sq']
                 beta1, beta2 = group['betas']
                 dof = state['dof']
