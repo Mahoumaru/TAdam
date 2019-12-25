@@ -109,8 +109,8 @@ class AdaBound(Optimizer):
                 # Applies bounds on actual learning rate
                 # lr_scheduler cannot affect final_lr, this is a workaround to apply lr decay
                 final_lr = group['final_lr'] * group['lr'] / base_lr
-                lower_bound = final_lr * (1 - 1 / (group['gamma'] * state['step'] + 1  + group['eps']))
-                upper_bound = final_lr * (1 + 1 / (group['gamma'] * state['step'] + group['eps']))
+                lower_bound = final_lr * (1 - 1 / (group['gamma'] * state['step'] + 1))
+                upper_bound = final_lr * (1 + 1 / (group['gamma'] * state['step']))
                 step_size = torch.full_like(denom, step_size)
                 step_size.div_(denom).clamp_(lower_bound, upper_bound).mul_(exp_avg)
 
