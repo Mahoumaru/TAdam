@@ -65,7 +65,7 @@ class AdaBound(Optimizer):
                 grad = p.grad.data
                 if grad.is_sparse:
                     raise RuntimeError(
-                        'Adam does not support sparse gradients, please consider SparseAdam instead')
+                        'AdaBound, just as Adam, does not support sparse gradients, please consider SparseAdam instead')
                 amsbound = group['amsbound']
 
                 state = self.state[p]
