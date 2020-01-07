@@ -18,13 +18,13 @@ class AdaBound(Optimizer):
         eps (float, optional): term added to the denominator to improve
             numerical stability (default: 1e-8)
         weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
-        amsbound (boolean, optional): whether to use the AMSBound variant of this algorithm
+        amsgrad (boolean, optional): whether to use the AMSBound variant of this algorithm
     .. Adaptive Gradient Methods with Dynamic Bound of Learning Rate:
         https://openreview.net/forum?id=Bkg3g2R9FX
     """
 
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), final_lr=0.01, gamma=1e-3,
-                 eps=1e-8, weight_decay=0, amsbound=False):
+                 eps=1e-8, weight_decay=0, amsgrad=False):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -38,7 +38,7 @@ class AdaBound(Optimizer):
         if not 0.0 <= gamma < 1.0:
             raise ValueError("Invalid gamma parameter: {}".format(gamma))
         defaults = dict(lr=lr, betas=betas, final_lr=final_lr, gamma=gamma, eps=eps,
-                        weight_decay=weight_decay, amsbound=amsbound)
+                        weight_decay=weight_decay, amsgrad=amsgrad)
         super(AdaBound, self).__init__(params, defaults)
 
         self.base_lrs = list(map(lambda group: group['lr'], self.param_groups))
@@ -46,7 +46,7 @@ class AdaBound(Optimizer):
     def __setstate__(self, state):
         super(AdaBound, self).__setstate__(state)
         for group in self.param_groups:
-            group.setdefault('amsbound', False)
+            group.setdefault('amsgrad', False)
 
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -66,7 +66,7 @@ class AdaBound(Optimizer):
                 if grad.is_sparse:
                     raise RuntimeError(
                         'AdaBound, just as Adam, does not support sparse gradients, please consider SparseAdam instead')
-                amsbound = group['amsbound']
+                amsgrad = group['amsgrad']
 
                 state = self.state[p]
 
@@ -77,12 +77,12 @@ class AdaBound(Optimizer):
                     state['exp_avg'] = torch.zeros_like(p.data)
                     # Exponential moving average of squared gradient values
                     state['exp_avg_sq'] = torch.zeros_like(p.data)
-                    if amsbound:
+                    if amsgrad:
                         # Maintains max of all exp. moving avg. of sq. grad. values
                         state['max_exp_avg_sq'] = torch.zeros_like(p.data)
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
-                if amsbound:
+                if amsgrad:
                     max_exp_avg_sq = state['max_exp_avg_sq']
                 beta1, beta2 = group['betas']
 
@@ -94,7 +94,7 @@ class AdaBound(Optimizer):
                 # Decay the first and second moment running average coefficient
                 exp_avg.mul_(beta1).add_(1 - beta1, grad)
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
-                if amsbound:
+                if amsgrad:
                     # Maintains the maximum of all 2nd moment running avg. till now
                     torch.max(max_exp_avg_sq, exp_avg_sq, out=max_exp_avg_sq)
                     # Use the max. for normalizing running avg. of gradient

@@ -12,7 +12,7 @@ class TAdaBound(Optimizer):
     """
 
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), final_lr=0.01, gamma=1e-3,
-                 eps=1e-8, weight_decay=0, amsbound=False):
+                 eps=1e-8, weight_decay=0, amsgrad=False):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -26,15 +26,15 @@ class TAdaBound(Optimizer):
         if not 0.0 <= gamma < 1.0:
             raise ValueError("Invalid gamma parameter: {}".format(gamma))
         defaults = dict(lr=lr, betas=betas, final_lr=final_lr, gamma=gamma, eps=eps,
-                        weight_decay=weight_decay, amsbound=amsbound)
+                        weight_decay=weight_decay, amsgrad=amsgrad)
         super(TAdaBound, self).__init__(params, defaults)
-        
+
         self.base_lrs = list(map(lambda group: group['lr'], self.param_groups))
 
     def __setstate__(self, state):
         super(TAdaBound, self).__setstate__(state)
         for group in self.param_groups:
-            group.setdefault('amsbound', False)
+            group.setdefault('amsgrad', False)
 
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -53,7 +53,7 @@ class TAdaBound(Optimizer):
                 grad = p.grad.data
                 if grad.is_sparse:
                     raise RuntimeError('TAdaBound, just as Adam, does not support sparse gradients, please consider SparseAdam instead')
-                amsbound = group['amsbound']
+                amsgrad = group['amsgrad']
 
                 state = self.state[p]
 
@@ -64,24 +64,20 @@ class TAdaBound(Optimizer):
                     state['exp_avg'] = torch.zeros_like(p.data)
                     # Exponential moving average of squared gradient values
                     state['exp_avg_sq'] = torch.zeros_like(p.data)
-                    if amsbound:
+                    if amsgrad:
                         # Maintains max of all exp. moving avg. of sq. grad. values
                         state['max_exp_avg_sq'] = torch.zeros_like(p.data)
                     # Definition of weight W_t
                     beta1, beta2 = group['betas']
-                    state['W_t'] = torch.zeros(1) + beta1 / (1.0 - beta1)
-                    # Definition of weight w_t
-                    state['w_t'] = torch.zeros(1)
+                    state['W_t'] = torch.tensor(0) + beta1 / (1.0 - beta1)
                     # Dimension d of the parameters
-                    state['dim'] = 1
-                    for i in p.data.size():
-                        state['dim']*=i
+                    state['dim'] = p.data.numel()
                     # Degrees of freedom, initialized to the parameters dimension
-                    state['dof'] = torch.zeros_like(p.data).add(1).sum()
+                    state['dof'] = torch.tensor(0) + state['dim']
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
-                Wt, wt = state['W_t'], state['w_t']
-                if amsbound:
+                Wt = state['W_t']
+                if amsgrad:
                     max_exp_avg_sq = state['max_exp_avg_sq']
                 beta1, beta2 = group['betas']
                 dof = state['dof']
@@ -92,15 +88,15 @@ class TAdaBound(Optimizer):
                     grad.add_(group['weight_decay'], p.data)
 
                 # Weights computation
-                wt.mul_(0.0).add_(grad.sub(exp_avg).pow_(2).div_(exp_avg_sq.add(group['eps'])).sum())
-                wt.add_(dof).pow_(-1).mul_((state['dim'] + dof))
-                betaw = Wt.div(Wt.add(wt)).item()
+                wt = grad.sub(exp_avg).pow_(2).div_(exp_avg_sq.add(group['eps'])).sum()
+                wt.add_(dof).pow_(-1).mul_(state['dim'] + dof)
+                betaw = Wt.div(Wt.add(wt))
                 Wt.mul_(2.0 - 1.0/beta1).add_(wt)
                 # Decay the first and second moment running average coefficient
-                exp_avg.mul_(betaw).add_((1 - betaw), grad)
+                exp_avg.mul_(betaw).add_(grad.mul(1 - betaw))
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
                 # TAMSBound
-                if amsbound:
+                if amsgrad:
                     # Maintains the maximum of all 2nd moment running avg. till now
                     torch.max(max_exp_avg_sq, exp_avg_sq, out=max_exp_avg_sq)
                     # Use the max. for normalizing running avg. of gradient

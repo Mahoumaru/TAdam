@@ -82,18 +82,14 @@ class TAdam(Optimizer):
                         state['max_exp_avg_sq'] = torch.zeros_like(p.data)
                     # Definition of weight W_t
                     beta1, beta2 = group['betas']
-                    state['W_t'] = torch.zeros(1) + beta1 / (1.0 - beta1)
-                    # Definition of weight w_t
-                    state['w_t'] = torch.zeros(1)
+                    state['W_t'] = torch.tensor(0) + beta1 / (1.0 - beta1)
                     # Dimension d of the parameters
-                    state['dim'] = 1
-                    for i in p.data.size():
-                        state['dim']*=i
+                    state['dim'] = p.data.numel()
                     # Degrees of freedom, initialized to the parameters dimension
-                    state['dof'] = torch.zeros_like(p.data).add(1).sum()
+                    state['dof'] = torch.tensor(0) + state['dim']
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
-                Wt, wt = state['W_t'], state['w_t']
+                Wt = state['W_t']
                 if amsgrad:
                     max_exp_avg_sq = state['max_exp_avg_sq']
                 beta1, beta2 = group['betas']
@@ -105,12 +101,12 @@ class TAdam(Optimizer):
                     grad.add_(group['weight_decay'], p.data)
 
                 # Weights computation
-                wt.mul_(0.0).add_(grad.sub(exp_avg).pow_(2).div_(exp_avg_sq.add(group['eps'])).sum())
-                wt.add_(dof).pow_(-1).mul_((state['dim'] + dof))
-                betaw = Wt.div(Wt.add(wt)).item()
+                wt = grad.sub(exp_avg).pow_(2).div_(exp_avg_sq.add(group['eps'])).sum()
+                wt.add_(dof).pow_(-1).mul_(state['dim'] + dof)
+                betaw = Wt.div(Wt.add(wt))
                 Wt.mul_(2.0 - 1.0/beta1).add_(wt)
                 # Decay the first and second moment running average coefficient
-                exp_avg.mul_(betaw).add_((1 - betaw), grad)
+                exp_avg.mul_(betaw).add_(grad.mul(1 - betaw))
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
                 if amsgrad:
                     # Maintains the maximum of all 2nd moment running avg. till now
