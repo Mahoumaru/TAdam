@@ -11,7 +11,7 @@ class TAdaBound(Optimizer):
           https://openreview.net/pdf?id=Bkg3g2R9FX
     """
 
-    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), final_lr=0.01, gamma=1e-3,
+    def __init__(self, params, lr=1e-3, k_dof=1, betas=(0.9, 0.999), final_lr=0.01, gamma=1e-3,
                  eps=1e-8, weight_decay=0, amsgrad=False):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
@@ -25,7 +25,9 @@ class TAdaBound(Optimizer):
             raise ValueError("Invalid final learning rate: {}".format(final_lr))
         if not 0.0 <= gamma < 1.0:
             raise ValueError("Invalid gamma parameter: {}".format(gamma))
-        defaults = dict(lr=lr, betas=betas, final_lr=final_lr, gamma=gamma, eps=eps,
+        if not 0.0 <= k_dof:
+            raise ValueError("Invalid degrees of freedom scale factor: {}".format(k_dof))
+        defaults = dict(lr=lr, k_dof=k_dof, betas=betas, final_lr=final_lr, gamma=gamma, eps=eps,
                         weight_decay=weight_decay, amsgrad=amsgrad)
         super(TAdaBound, self).__init__(params, defaults)
 
@@ -69,11 +71,11 @@ class TAdaBound(Optimizer):
                         state['max_exp_avg_sq'] = torch.zeros_like(p.data)
                     # Definition of weight W_t
                     beta1, beta2 = group['betas']
-                    state['W_t'] = torch.tensor(0) + beta1 / (1.0 - beta1)
+                    state['W_t'] = torch.tensor(0.) + beta1 / (1.0 - beta1)
                     # Dimension d of the parameters
                     state['dim'] = p.data.numel()
                     # Degrees of freedom, initialized to the parameters dimension
-                    state['dof'] = torch.tensor(0) + state['dim']
+                    state['dof'] = torch.tensor(0.) + group["k_dof"] * state['dim']
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 Wt = state['W_t']
