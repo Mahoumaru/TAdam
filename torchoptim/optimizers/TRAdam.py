@@ -11,7 +11,7 @@ class TRAdam(Optimizer):
         https://arxiv.org/pdf/1908.03265.pdf
     """
 
-    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999),
+    def __init__(self, params, lr=1e-3, k_dof=1, betas=(0.9, 0.999),
                  eps=1e-8, weight_decay=0, amsgrad=False):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
@@ -21,7 +21,9 @@ class TRAdam(Optimizer):
             raise ValueError("Invalid beta parameter at index 0: {}".format(betas[0]))
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
-        defaults = dict(lr=lr, betas=betas, eps=eps,
+        if not 0.0 <= k_dof:
+            raise ValueError("Invalid degrees of freedom scale factor: {}".format(k_dof))
+        defaults = dict(lr=lr, k_dof=k_dof, betas=betas, eps=eps,
                         weight_decay=weight_decay, amsgrad=amsgrad)
         super(TRAdam, self).__init__(params, defaults)
 
@@ -63,11 +65,11 @@ class TRAdam(Optimizer):
                         state['max_exp_avg_sq'] = torch.zeros_like(p.data)
                     # Definition of weight W_t
                     beta1, beta2 = group['betas']
-                    state['W_t'] = torch.tensor(0) + beta1 / (1.0 - beta1)
+                    state['W_t'] = torch.tensor(0.) + beta1 / (1.0 - beta1)
                     # Dimension d of the parameters
                     state['dim'] = p.data.numel()
                     # Degrees of freedom, initialized to the parameters dimension
-                    state['dof'] = torch.tensor(0) + state['dim']
+                    state['dof'] = torch.tensor(0.) + group["k_dof"] * state['dim']
                     # Maximum length of the approximated SMA
                     state['rho_inf'] = ((2. / (1. - group['betas'][1])) - 1.)
 
