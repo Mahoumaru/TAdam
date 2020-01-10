@@ -40,7 +40,7 @@ class TAdam(Optimizer):
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         if not 0.0 <= k_dof:
-            raise ValueError("Invalid degrees of freedom: {}".format(dof))
+            raise ValueError("Invalid degrees of freedom scale factor: {}".format(k_dof))
         defaults = dict(lr=lr, k_dof=k_dof, betas=betas, eps=eps,
                         weight_decay=weight_decay, amsgrad=amsgrad)
         super(TAdam, self).__init__(params, defaults)
@@ -67,7 +67,7 @@ class TAdam(Optimizer):
                     continue
                 grad = p.grad.data
                 if grad.is_sparse:
-                    raise RuntimeError('t-Adam, just as Adam, does not support sparse gradients, please consider SparseAdam instead')
+                    raise RuntimeError('TAdam, just as Adam, does not support sparse gradients, please consider SparseAdam instead')
                 amsgrad = group['amsgrad']
 
                 state = self.state[p]
