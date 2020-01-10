@@ -29,7 +29,7 @@ class TAdam(Optimizer):
         https://openreview.net/forum?id=ryQu7f-RZ
     """
 
-    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999),
+    def __init__(self, params, lr=1e-3, dof=None, betas=(0.9, 0.999),
                  eps=1e-8, weight_decay=0, amsgrad=False):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
@@ -39,7 +39,9 @@ class TAdam(Optimizer):
             raise ValueError("Invalid beta parameter at index 0: {}".format(betas[0]))
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
-        defaults = dict(lr=lr, betas=betas, eps=eps,
+        if not dof == None and not 0.0 <= dof:
+            raise ValueError("Invalid degrees of freedom: {}".format(dof))
+        defaults = dict(lr=lr, dof=dof, betas=betas, eps=eps,
                         weight_decay=weight_decay, amsgrad=amsgrad)
         super(TAdam, self).__init__(params, defaults)
 
@@ -82,11 +84,11 @@ class TAdam(Optimizer):
                         state['max_exp_avg_sq'] = torch.zeros_like(p.data)
                     # Definition of weight W_t
                     beta1, beta2 = group['betas']
-                    state['W_t'] = torch.tensor(0) + beta1 / (1.0 - beta1)
+                    state['W_t'] = torch.tensor(0.) + beta1 / (1.0 - beta1)
                     # Dimension d of the parameters
                     state['dim'] = p.data.numel()
-                    # Degrees of freedom, initialized to the parameters dimension
-                    state['dof'] = torch.tensor(0) + state['dim']
+                    # Degrees of freedom, initialized to the parameters dimension or to the user specified value
+                    state['dof'] = torch.tensor(0.) + (group["dof"] or state['dim'])
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 Wt = state['W_t']
