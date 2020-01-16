@@ -11,7 +11,7 @@ class TAdaBound(Optimizer):
           https://openreview.net/pdf?id=Bkg3g2R9FX
     """
 
-    def __init__(self, params, lr=1e-3, k_dof=1, betas=(0.9, 0.999), final_lr=0.01, gamma=1e-3,
+    def __init__(self, params, lr=1e-3, k_dof=1.0, betas=(0.9, 0.999), final_lr=0.01, gamma=1e-3,
                  eps=1e-8, weight_decay=0, amsgrad=False):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
@@ -25,7 +25,7 @@ class TAdaBound(Optimizer):
             raise ValueError("Invalid final learning rate: {}".format(final_lr))
         if not 0.0 <= gamma < 1.0:
             raise ValueError("Invalid gamma parameter: {}".format(gamma))
-        if not 0.0 <= k_dof:
+        if not (0.0 <= k_dof or math.inf == k_dof):
             raise ValueError("Invalid degrees of freedom scale factor: {}".format(k_dof))
         defaults = dict(lr=lr, k_dof=k_dof, betas=betas, final_lr=final_lr, gamma=gamma, eps=eps,
                         weight_decay=weight_decay, amsgrad=amsgrad)
@@ -75,14 +75,14 @@ class TAdaBound(Optimizer):
                     # Dimension d of the parameters
                     state['dim'] = p.data.numel()
                     # Degrees of freedom, initialized to the parameters dimension
-                    state['dof'] = torch.tensor(0.) + group["k_dof"] * state['dim']
+                    if not group["k_dof"] == math.inf:
+                        state['dof'] = torch.tensor(0.) + group["k_dof"] * state['dim']
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 Wt = state['W_t']
                 if amsgrad:
                     max_exp_avg_sq = state['max_exp_avg_sq']
                 beta1, beta2 = group['betas']
-                dof = state['dof']
 
                 state['step'] += 1
 
@@ -90,10 +90,13 @@ class TAdaBound(Optimizer):
                     grad.add_(group['weight_decay'], p.data)
 
                 # Weights computation
-                wt = grad.sub(exp_avg).pow_(2).div_(exp_avg_sq.add(group['eps'])).sum()
-                wt.add_(dof).pow_(-1).mul_(state['dim'] + dof)
-                betaw = Wt.div(Wt.add(wt))
-                Wt.mul_(2.0 - 1.0/beta1).add_(wt)
+                if group["k_dof"] == math.inf:
+                    betaw = beta1
+                else:
+                    wt = grad.sub(exp_avg).pow_(2).div_(exp_avg_sq.add(group['eps'])).sum()
+                    wt.add_(state['dof']).pow_(-1).mul_(state['dim'] + state['dof'])
+                    betaw = Wt.div(Wt.add(wt))
+                    Wt.mul_(2.0 - 1.0/beta1).add_(wt)
                 # Decay the first and second moment running average coefficient
                 exp_avg.mul_(betaw).add_(grad.mul(1 - betaw))
                 exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
