@@ -16,14 +16,16 @@ class RoAdam(Optimizer):
             raise ValueError("Invalid beta parameter at index 0: {}".format(betas[0]))
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
+        if not 0.0 <= amsgrad <= 1.0:
+            raise ValueError("Invalid amsgrad parameter: {}".format(amsgrad))
         defaults = dict(lr=lr, betas=betas, eps=eps,
                         weight_decay=weight_decay, amsgrad=amsgrad, bounds=bounds)
         super(RoAdam, self).__init__(params, defaults)
 
     def __setstate__(self, state):
         super(RoAdam, self).__setstate__(state)
-        for group in self.param_groups:
-            group.setdefault('amsgrad', False)
+        # for group in self.param_groups:
+        #     group.setdefault('amsgrad', False)
 
     def step(self, floss, closure=None):
         """Performs a single optimization step.
@@ -65,7 +67,7 @@ class RoAdam(Optimizer):
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 prev_loss, exp_avg_d = state['prev_loss'], state['exp_avg_d']
                 if amsgrad:
-                    max_exp_avg_sq = state['max_exp_avg_sq']
+                    max_exp_avg_sq = state['max_exp_avg_sq'].mul_(amsgrad)
                 beta1, beta2, beta3 = group['betas']
                 k, K = group['bounds']
 
