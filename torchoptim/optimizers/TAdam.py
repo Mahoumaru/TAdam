@@ -17,11 +17,11 @@ class TAdam(Optimizer):
         eps (float, optional): term added to the denominator to improve
             numerical stability (default: 1e-8)
         weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
-        amsgrad (boolean, optional): whether to use the AMSGrad variant of this
+        amsgrad (boolean or [0,1], optional): to use the AMSGrad variant of this
             algorithm from the paper `On the Convergence of Adam and Beyond`_
-            (default: False)
+            if float is given, v_max is decayed (default: False)
         k_dof (float or inf, optional): the degrees of freedom of the student-t
-            distribution nu is defined as k_dof * dimension of the param_groups 
+            distribution nu is defined as k_dof * dimension of the param_groups
             (default: 1.0)
 
     .. _Adam\: A Method for Stochastic Optimization:
@@ -42,14 +42,16 @@ class TAdam(Optimizer):
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         if not (0.0 <= k_dof or math.inf == k_dof):
             raise ValueError("Invalid degrees of freedom scale factor: {}".format(k_dof))
+        if not 0.0 <= amsgrad <= 1.0:
+            raise ValueError("Invalid amsgrad parameter: {}".format(amsgrad))
         defaults = dict(lr=lr, k_dof=k_dof, betas=betas, eps=eps,
                         weight_decay=weight_decay, amsgrad=amsgrad)
         super(TAdam, self).__init__(params, defaults)
 
     def __setstate__(self, state):
         super(TAdam, self).__setstate__(state)
-        for group in self.param_groups:
-            group.setdefault('amsgrad', False)
+        # for group in self.param_groups:
+        #     group.setdefault('amsgrad', False)
 
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -95,7 +97,7 @@ class TAdam(Optimizer):
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 Wt = state['W_t']
                 if amsgrad:
-                    max_exp_avg_sq = state['max_exp_avg_sq']
+                    max_exp_avg_sq = state['max_exp_avg_sq'].mul_(amsgrad)
                 beta1, beta2 = group['betas']
 
                 state['step'] += 1

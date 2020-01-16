@@ -23,14 +23,16 @@ class TRAdam(Optimizer):
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         if not (0.0 <= k_dof or math.inf == k_dof):
             raise ValueError("Invalid degrees of freedom scale factor: {}".format(k_dof))
+        if not 0.0 <= amsgrad <= 1.0:
+            raise ValueError("Invalid amsgrad parameter: {}".format(amsgrad))
         defaults = dict(lr=lr, k_dof=k_dof, betas=betas, eps=eps,
                         weight_decay=weight_decay, amsgrad=amsgrad)
         super(TRAdam, self).__init__(params, defaults)
 
     def __setstate__(self, state):
         super(TRAdam, self).__setstate__(state)
-        for group in self.param_groups:
-            group.setdefault('amsgrad', False)
+        # for group in self.param_groups:
+        #     group.setdefault('amsgrad', False)
 
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -77,7 +79,7 @@ class TRAdam(Optimizer):
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 Wt = state['W_t']
                 if amsgrad:
-                    max_exp_avg_sq = state['max_exp_avg_sq']
+                    max_exp_avg_sq = state['max_exp_avg_sq'].mul_(amsgrad)
                 beta1, beta2 = group['betas']
 
                 state['step'] += 1
