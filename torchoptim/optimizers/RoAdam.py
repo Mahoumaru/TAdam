@@ -16,6 +16,8 @@ class RoAdam(Optimizer):
             raise ValueError("Invalid beta parameter at index 0: {}".format(betas[0]))
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
+        if not 0.0 <= betas[2] < 1.0:
+            raise ValueError("Invalid beta parameter at index 2: {}".format(betas[2]))
         if not 0.0 <= amsgrad <= 1.0:
             raise ValueError("Invalid amsgrad parameter: {}".format(amsgrad))
         defaults = dict(lr=lr, betas=betas, eps=eps,
