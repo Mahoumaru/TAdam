@@ -61,6 +61,7 @@ def get_parser():
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum term')
     parser.add_argument('--beta1', default=0.9, type=float, help='Adam coefficients beta_1')
     parser.add_argument('--beta2', default=0.999, type=float, help='Adam coefficients beta_2')
+    parser.add_argument('--beta3', default=0.999, type=float, help='Adam coefficients beta_2')
     parser.add_argument('--k_dof', default=1., type=float, help='TAdam dof scale factor k_dof')
     parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
     parser.add_argument('--weight_decay', default=5e-4, type=float,
@@ -122,14 +123,14 @@ def build_dataset(noisy):
     return train_loader, test_loader
 
 
-def get_ckpt_name(model='resnet', optimizer='sgd', lr=0.1, final_lr=0.1, momentum=0.9,
-                  beta1=0.9, beta2=0.999, gamma=1e-3, k_dof=1.):
+def get_ckpt_name(model='resnet', optimizer='sgd', lr=0.1, momentum=0.9,
+                  beta1=0.9, beta2=0.999, beta3=0.999, k_dof=1.):
     name = {
         'sgd': 'lr{}-momentum{}'.format(lr, momentum),
         'adagrad': 'lr{}'.format(lr),
         'adam': 'lr{}-betas{}-{}'.format(lr, beta1, beta2),
         'tadam': 'lr{}-betas{}-{}-kdof{}'.format(lr, beta1, beta2, k_dof),
-        'roadam': 'lr{}-betas{}-{}'.format(lr, beta1, beta2),
+        'roadam': 'lr{}-betas{}-{}-{}'.format(lr, beta1, beta2, beta3),
         'amsgrad': 'lr{}-betas{}-{}'.format(lr, beta1, beta2),
         'tamsgrad': 'lr{}-betas{}-{}-kdof{}'.format(lr, beta1, beta2, k_dof),
     }[optimizer]
@@ -181,7 +182,7 @@ def create_optimizer(args, model_params):
                           weight_decay=args.weight_decay, amsgrad=True, k_dof=args.k_dof)
     else:
         assert args.optim == 'roadam'
-        return RoAdam(model_params, args.lr, betas=(args.beta1, args.beta2, args.beta2),
+        return RoAdam(model_params, args.lr, betas=(args.beta1, args.beta2, args.beta3),
                           weight_decay=args.weight_decay)
 
 
@@ -245,8 +246,8 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     ckpt_name = get_ckpt_name(model=args.model, optimizer=args.optim, lr=args.lr,
-                              final_lr=args.final_lr, momentum=args.momentum,
-                              beta1=args.beta1, beta2=args.beta2, gamma=args.gamma, k_dof=args.k_dof)
+                              momentum=args.momentum, beta1=args.beta1,
+                              beta2=args.beta2, beta3=args.beta3, k_dof=args.k_dof)
     if args.resume:
         ckpt = load_checkpoint(ckpt_name)
         best_acc = ckpt['acc']
