@@ -109,7 +109,7 @@ def evaluate_data(directories, file_name, col='ReturnAverage'):
                     df = df.append(df_meth, ignore_index=True)
                 i = i + 1
                 break
-    location = MAIN_DIRECTORY + "/" + "rlpty_plots" + "/"
+    location = MAIN_DIRECTORY + "/" + "rlpyt_plots" + "/"
     make_Dirs(location)
     plot_data(location, df, col)
 
@@ -266,7 +266,7 @@ else:
     ALGO = PPOngc
 
 CLIPPING = ARGS.clip #0.2
-HORIZON = ARGS.horizon #default = 2048 # Is it T? Don't know what to do with this one
+HORIZON = ARGS.horizon #default = 2048
 NUM_EPOCHS = 10
 NUM_MINIBATCHES = HORIZON // ARGS.batch_size
 GAE_PARAM = 0.95
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     np.savetxt(MAIN_DIRECTORY + "/dirs.csv", np.array(sdirs).T, fmt="%s")
 
     """
-    dirs = pd.read_csv(MAIN_DIRECTORY + "/" + "rlpty_plots/" + "dirs.csv", header=None)
+    dirs = pd.read_csv(MAIN_DIRECTORY + "/" + "rlpyt_plots/" + "dirs.csv", header=None)
     sdirs = list(dirs[0])
     """
 
