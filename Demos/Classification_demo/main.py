@@ -180,7 +180,7 @@ def create_optimizer(args, model_params):
         return TAdam(model_params, args.lr, betas=(args.beta1, args.beta2),
                           weight_decay=args.weight_decay, amsgrad=True, k_dof=args.k_dof)
     else:
-        assert args.optim == 'roadam':
+        assert args.optim == 'roadam'
         return RoAdam(model_params, args.lr, betas=(args.beta1, args.beta2, args.beta2),
                           weight_decay=args.weight_decay)
 
