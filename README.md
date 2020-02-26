@@ -18,7 +18,7 @@ optimizer = TAdam(net.parameters())
 ```
 3. adjust hyperparameters (same as Adam: lr, betas, eps, weight_decay, amsgrad. - N.B. RoAdam has a third beta. -)
 
-# Demos
+## Demos
  Contains the codes used for the results in the paper (arxiv-paper-link)
 
  In order to use the reinforcement learning code, you need to install the rlpyt library, developped by the Berkley A.I. research team: https://github.com/astooke/rlpyt.git
