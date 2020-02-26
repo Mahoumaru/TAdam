@@ -22,5 +22,5 @@ os.system("python main.py --model=resnet --optim=tamsgrad --lr=0.001 --beta1=0.9
 os.system("python plot.py -p Adam TAdam AMSGrad TAMSGrad")
 
 os.system("echo RoAdam")
-os.system(" python main.py --model=resnet --optim=roadam --lr=0.001 --beta1=0.99 --beta2=0.999")
-os.system("python plot.py -p Adam TAdam AdaBound RoAdam AMSGrad TAMSGrad")
+os.system(" python main.py --model=resnet --optim=roadam --lr=0.001 --beta1=0.99 --beta2=0.999 --beta3=0.999")
+os.system("python plot.py -p Adam TAdam RoAdam AMSGrad TAMSGrad")
