@@ -3,8 +3,7 @@ Runs one instance of the environment and optimizes using the Soft Actor
 Critic algorithm. Can use a GPU for the agent (applies to both sample and
 train). No parallelism employed, everything happens in one python process; can
 be easier to debug.
-Requires OpenAI gym (and maybe mujoco).  If not installed, move on to next
-example.
+Requires OpenAI gym (and maybe mujoco).
 """
 
 from rlpyt.samplers.serial.sampler import SerialSampler
@@ -51,6 +50,7 @@ def argument():
     parser.add_argument('-clip', "--clip", help='clipping parameter. ', type=float, default=0.2)
     parser.add_argument('-T', "--horizon", help='Horizon T ', type=int, default=2048)
     parser.add_argument('-swap', "--swap", help='swapp lr ', type=int, default=0)
+    parser.add_argument('--gc', action="store_true", help='run with gradient norm clipping (default: False)')
     args = parser.parse_args()
     return args
 
@@ -137,7 +137,6 @@ def record_video(dirs, video_path):
 def record_test(directory, video_path, n):
     make_Dirs(video_path + n + '/')
     env = gym_make(ENV_ID)
-    #env = e.MinitaurBulletEnv(render=True)
     env = wrappers.Monitor(env, video_path + n + '/', video_callable=lambda episode_id: True, force=True)
     env.seed(int(n)*7)
     np.random.seed(int(n)*7)
@@ -194,28 +193,28 @@ def build_and_train(env_id="Pendulum-v0", run_ID=0, cuda_idx=None, method="adam"
     sampler = SerialSampler(
         EnvCls=gym_make,
         env_kwargs=dict(id=env_id),
-        batch_T=HORIZON,  # Not One but Five time-step per sampler iteration.
+        batch_T=HORIZON,  # Time-step per sampler iteration, T.
         batch_B=1,  # One environment (i.e. sampler Batch dimension).
         max_decorrelation_steps=400 #(int): if taking random number of steps before start of training, to decorrelate batch states
     )
     if method == "adam":
-        algo = PPO(learning_rate=LEARNING_RATE, value_loss_coeff=C1,
+        algo = ALGO(learning_rate=LEARNING_RATE, value_loss_coeff=C1,
                    entropy_loss_coeff=C2, gae_lambda=GAE_PARAM,
                    minibatches=NUM_MINIBATCHES, epochs=NUM_EPOCHS,
                    ratio_clip=CLIPPING, linear_lr_schedule=False)
     elif method == "tadam":
-        algo = PPOngc(learning_rate=TLEARNING_RATE, value_loss_coeff=C1,
+        algo = ALGO(learning_rate=TLEARNING_RATE, value_loss_coeff=C1,
                    entropy_loss_coeff=C2, OptimCls=TAdam, gae_lambda=GAE_PARAM,
                    minibatches=NUM_MINIBATCHES, epochs=NUM_EPOCHS,
                    ratio_clip=CLIPPING, linear_lr_schedule=False)
     elif method == "amsgrad":
-        algo = PPO(learning_rate=LEARNING_RATE, value_loss_coeff=C1,
+        algo = ALGO(learning_rate=LEARNING_RATE, value_loss_coeff=C1,
                    entropy_loss_coeff=C2, optim_kwargs={'amsgrad': True},
                    gae_lambda=GAE_PARAM,  minibatches=NUM_MINIBATCHES,
                    epochs=NUM_EPOCHS, ratio_clip=CLIPPING,
                    linear_lr_schedule=False)
     elif method == "tamsgrad":
-        algo = PPOngc(learning_rate=TLEARNING_RATE, value_loss_coeff=C1,
+        algo = ALGO(learning_rate=TLEARNING_RATE, value_loss_coeff=C1,
                    entropy_loss_coeff=C2, OptimCls=TAdam, optim_kwargs={'amsgrad': True},
                    gae_lambda=GAE_PARAM, minibatches=NUM_MINIBATCHES,
                    epochs=NUM_EPOCHS, ratio_clip=CLIPPING,
@@ -245,7 +244,7 @@ def build_and_train(env_id="Pendulum-v0", run_ID=0, cuda_idx=None, method="adam"
 ######################################### HYPERPARAMETERS ##########################################
 ARGS = argument()
 
-ENV_ID = ARGS.env_id #"HopperBulletEnv-v0"#"Pendulum-v0"#"AntBulletEnv-v0"#"MountainCarContinuous-v0"#"MinitaurBulletEnv-v0"#
+ENV_ID = ARGS.env_id
 
 METHODS = ["adam", "tadam"]#, "amsgrad", "tamsgrad"]#
 N_TRIALS = 2
@@ -260,6 +259,11 @@ if ARGS.swap == 0:
 else:
     TLEARNING_RATE = 3e-4
     LEARNING_RATE = 1e-3
+
+if ARGS.gc:
+    ALGO = PPO
+else:
+    ALGO = PPOngc
 
 CLIPPING = ARGS.clip #0.2
 HORIZON = ARGS.horizon #default = 2048 # Is it T? Don't know what to do with this one
