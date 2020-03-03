@@ -1,5 +1,5 @@
 # torchoptim
-TAdam and RoAdam optimizers for neural networks.
+TAdam (http://arxiv.org/abs/2003.00179) and RoAdam optimizers for neural networks.
 
 Implemented using the pytorch library.
 
@@ -19,7 +19,7 @@ optimizer = TAdam(net.parameters())
 3. adjust hyperparameters (same as Adam: lr, betas, eps, weight_decay, amsgrad. - N.B. RoAdam has a third beta. -)
 
 ## Demos
- Contains the codes used for the results in the paper (arxiv-paper-link)
+ Contains the codes used for the results in the paper (http://arxiv.org/abs/2003.00179)
 
  In order to use the reinforcement learning code, you need to install the rlpyt library, developped by the Berkley A.I. research team: https://github.com/astooke/rlpyt.git
  Follow the instructions on the link to install it.
