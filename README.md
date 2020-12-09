@@ -30,3 +30,14 @@ optimizer = TAdam(net.parameters())
  Follow the instructions on the link to install it.
  
  Note that a modified version of PPO and A2C is included under the reinforcement learning demo folder. The only difference with the BAIR implementation is the fact that this modified version does not use the gradient norm clipping scheme (More details in the paper).
+
+## How to cite:
+
+```
+@article{ilboudo2020tadam,
+  title={TAdam: A Robust Stochastic Gradient Optimizer},
+  author={Ilboudo, Wendyam Eric Lionel and Kobayashi, Taisuke and Sugimoto, Kenji},
+  journal={arXiv preprint arXiv:2003.00179},
+  year={2020}
+}
+```
