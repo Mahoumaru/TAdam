@@ -1,3 +1,8 @@
+ This repository is mainly dedicated to t-Adam, i.e. the t-momentum based Adam optimizer, and will no longer be updated.
+ 
+ Please visit the following official t-momentum repository: [here](https://github.com/Mahoumaru/t-momentum.git).
+ The t-momentum repository will be updated with the latest advances concerning the t-momentum algorithm in general.
+
 # torchoptim
 TAdam (http://arxiv.org/abs/2003.00179) and RoAdam optimizers for neural networks.
 
